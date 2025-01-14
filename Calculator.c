@@ -24,7 +24,18 @@ int main() {
 }
 
 void AppCreate(int type, char *str) {
-    //TODO
+    token *p = (token *) malloc(sizeof(token));
+    memcpy(p->str,str,strlen(str)+1);
+    p->type = type;
+    //int;
+    if(type==INT) {
+        p->i=atoi(str);
+    }
+    p->next=NULL;
+    if(head==NULL) head=p;
+    else tail->next=p;
+    p->prev = tail;
+    tail=p;
 }
 
 bool tokenizer() {
@@ -42,6 +53,7 @@ bool tokenizer() {
         else if(length==1 && strchr(brackets,str[0])) {
             AppCreate(BRACKET,str);
         }
+        //float;
         //integer;
         for(int i=0;i<length;i++) {
             if(!isdigit(str[i])) {
@@ -51,7 +63,6 @@ bool tokenizer() {
         }
         if(flag==1)
         AppCreate(INT,str);
-        //float;
         ch = getchar();
     }while(ch!='\n' && ch!=EOF);
     if(ch==EOF) End=1;
