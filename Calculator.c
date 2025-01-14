@@ -8,63 +8,38 @@ enum Type{INT,FLOAT,VARIABLE,OPERATOR,BRACKET};
 typedef struct Token {
     int type;
     char str[32];
-    int i;
-    float f;
-    struct Token *next;
-    struct Token *prev;
 } token;
-token *head=NULL, *tail=NULL;
+token tokens[32];
+bool End=1;
+
 const char operators[]="+-*/=";
 const char brackets[]="()";
-bool End=0;
 
 int main() {
-    //TODO
+    //todo
     return 0;
 }
 
-void AppCreate(int type, char *str) {
-    token *p = (token *) malloc(sizeof(token));
-    memcpy(p->str,str,strlen(str)+1);
-    p->type = type;
-    //int;
-    if(type==INT) {
-        p->i=atoi(str);
-    }
-    p->next=NULL;
-    if(head==NULL) head=p;
-    else tail->next=p;
-    p->prev = tail;
-    tail=p;
+int TypeJudge(const char *str) {
+    //todo;
 }
-
-bool tokenizer() {
-    bool flag=1;
+int Tokenizer() {
+    int num_of_tokens=0;
     char str[32];
     char ch;
     do {
         scanf("%s",str);
-        int length = strlen(str);
-        //operators;
-        if(length==1 && strchr(operators,str[0])) {
-            AppCreate(OPERATOR,str);
-        }
-        //brackets;
-        else if(length==1 && strchr(brackets,str[0])) {
-            AppCreate(BRACKET,str);
-        }
-        //float;
-        //integer;
-        for(int i=0;i<length;i++) {
-            if(!isdigit(str[i])) {
-                flag=0;
-                break;
+        if(num_of_tokens>=0) {
+            strcpy(tokens[num_of_tokens].str,str);
+            int token_type = TypeJudge(str);
+            if(token_type==-1) num_of_tokens=-1;
+            else {
+                tokens[num_of_tokens].type = token_type;
+                num_of_tokens++;
             }
         }
-        if(flag==1)
-        AppCreate(INT,str);
-        ch = getchar();
-    }while(ch!='\n' && ch!=EOF);
-    if(ch==EOF) End=1;
-    return flag;
+        ch=getchar();
+    } while(ch!='\n' && ch!=EOF);
+    if(ch==EOF) End=0;
+    return num_of_tokens;
 }
