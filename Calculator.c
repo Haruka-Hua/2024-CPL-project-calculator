@@ -5,7 +5,7 @@
 #include<stdbool.h>
 #include<limits.h>
 enum TokenType{INTEGER,FLOAT,VARIABLE,OPERATOR,BRACKET};
-enum ExprType{EXPR,ASSIGNMENT};
+enum ExprType{EXPR,ASSIGNMENT,ERROR};
 typedef struct Token {
     int type;
     char str[32];
@@ -28,18 +28,25 @@ int ExprTypeJudge();
 int IntEval();
 double FloatEval();
 int main() {
+    FILE *fp=fopen("d:\\CLionProjects\\Calculator\\cal.in","r");
     while(End) {
-        int num_of_tokens = Tokenizer();
+        grammar_check=1;
+        int num_of_tokens = Tokenizer(fp);
         if(num_of_tokens==-1) {
             printf("Error\n");
             continue;
         }
-        if(ExprTypeJudge(num_of_tokens)==EXPR) {
+        if(num_of_tokens==0) {
+            return 0;
+        }
+        int expr_type = ExprTypeJudge(0,num_of_tokens-1);
+        if(expr_type==EXPR) {
             //needs to revise when float appears;
             int ans = IntEval(0,num_of_tokens-1);
             if(grammar_check) {
-                printf("%d",ans);
+                printf("%d\n",ans);
             }
+            else printf("Error\n");
         }
         //todo;
     }
@@ -107,12 +114,15 @@ int TypeJudge(const char *str) {
     }
     return -1;
 }
-int Tokenizer() {
+int Tokenizer(FILE *fp) {
     int num_of_tokens=0;
     char str[32];
     char ch;
     do {
-        scanf("%s",str);
+        if(fscanf(fp,"%s",str)==EOF) {
+            End=0;
+            return 0;
+        }
         if(num_of_tokens>=0) {
             strcpy(tokens[num_of_tokens].str,str);
             int token_type = TypeJudge(str);
@@ -122,19 +132,103 @@ int Tokenizer() {
                 num_of_tokens++;
             }
         }
-        ch=getchar();
+        ch=fgetc(fp);
     } while(ch!='\n' && ch!=EOF);
     if(ch==EOF) End=0;
     return num_of_tokens;
 }
-int ExprTypeJudge(int num_of_tokens) {
-    for(int i=0;i<num_of_tokens;i++) {
+int ExprTypeJudge(int l,int r) {
+    for(int i=l;i<=r;i++) {
         if(strcmp("=",tokens[i].str)==0) return ASSIGNMENT;
     }
     return EXPR;
 }
-int IntEval() {
-    //todo;
+bool check_brackets(int l,int r) {
+    if(tokens[l].str[0]=='(' && tokens[r].str[0]==')') {
+        int cnt_bracket=0;
+        for(int i=l+1;i<=r-1;i++) {
+            if(tokens[i].str[0]=='(') {
+                cnt_bracket++;
+            }
+            if(tokens[i].str[0]==')') {
+                cnt_bracket--;
+                if(cnt_bracket<0) return 0;
+            }
+        }
+        if(cnt_bracket!=0) return 0;
+        return 1;
+    }
+    else return 0;
+}
+int GetMainOp(int l,int r) {
+    //in_bracket
+    int in_bracket[r-l+1]={};
+    for(int i=l;i<=r;i++) {
+        if(tokens[i].str[0]=='(') {
+            int cnt=1;
+            while(cnt != 0 && i<=r) {
+                if(tokens[i].str[0]=='(') {
+                    cnt++;
+                }
+                else if(tokens[i].str[0]==')') {
+                    cnt--;
+                }
+                in_bracket[i-l]=1;
+                i++;
+            }
+        }
+    }
+    // +-
+    for(int i=r;i>=l;i--) {
+        if(in_bracket[i-l]!=1 && (tokens[i].str[0]=='+' || tokens[i].str[0]=='-')) {
+            return i;
+        }
+    }
+    for(int i=r;i>=l;i--) {
+        if(in_bracket[i-l]!=1 && (tokens[i].str[0]=='*' || tokens[i].str[0]=='/'))
+            return i;
+    }
+    return -1;
+}
+int IntEval(int l,int r) {
+    if(l>r) {
+        grammar_check=0;
+        return 0;
+    }
+    else if(l==r) {
+        if(tokens[l].type==INTEGER) {
+            return atoi(tokens[l].str);
+        }
+        else if(tokens[l].type==VARIABLE) {
+            //todo;
+        }
+        else {
+            grammar_check=0;
+            return 0;
+        }
+    }
+    else if(check_brackets(l,r)) {
+        return IntEval(l+1,r-1);
+    }
+    else {
+        int op = GetMainOp(l,r);
+        if(op<=l || op>=r) grammar_check=0;
+        int val1=IntEval(l,op-1), val2=IntEval(op+1,r);
+        if(grammar_check) {
+            switch (tokens[op].str[0]) {
+                case '+': {return val1+val2;}
+                case '-': {return val1-val2;}
+                case '*': {return val1*val2;}
+                case '/': {return val1/val2;}
+                default: {
+                    printf("Error\n");
+                    grammar_check=0;
+                    return 0;
+                }
+            }
+        }
+        else return 0;
+    }
 }
 double FloatEval() {
     //todo;
