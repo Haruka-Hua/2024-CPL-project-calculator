@@ -69,7 +69,7 @@ int main() {
             }
         }
         if(expr_type==ASSIGNMENT) {
-            int answer_type = AnswerType(0,num_of_tokens-1);
+            int answer_type = AnswerType(2,num_of_tokens-1);
             if(answer_type==INTEGER) {
                 int ans = IntAssignment(0,num_of_tokens-1);
                 if(grammar_check) {
