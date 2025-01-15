@@ -31,6 +31,8 @@ int IntEval();
 double FloatEval();
 int AnswerType();
 int VariableExist(const char *str);
+int IntAssignment();
+double FloatAssignment();
 int main() {
     FILE *fp=fopen("d:\\CLionProjects\\Calculator\\cal.in","r");
     while(End) {
@@ -67,45 +69,20 @@ int main() {
             }
         }
         if(expr_type==ASSIGNMENT) {
-            //needs to be revised when float appears;
-            if(tokens[0].type==VARIABLE && tokens[1].str[0]=='=') {
-                int answer_type=AnswerType(2,num_of_tokens-1);
-                if(answer_type==INTEGER){
-                    int ans = IntEval(2,num_of_tokens-1);
-                    if(grammar_check) {
-                        printf("%d\n",ans);
-                        int pos=VariableExist(tokens[0].str);
-                        if(pos>=0) {
-                            assignments[pos].int_val=ans;
-                            assignments[pos].type=INTEGER;
-                        }
-                        else {
-                            assignments[num_of_assignments].int_val=ans;
-                            assignments[num_of_assignments].type=INTEGER;
-                            strcpy(assignments[num_of_assignments].name,tokens[0].str);
-                            num_of_assignments++;
-                        }
-                    }
-                    else printf("Error\n");
+            int answer_type = AnswerType(0,num_of_tokens-1);
+            if(answer_type==INTEGER) {
+                int ans = IntAssignment(0,num_of_tokens-1);
+                if(grammar_check) {
+                    printf("%d\n",ans);
                 }
-                if(answer_type==FLOAT) {
-                    double ans = FloatEval(2,num_of_tokens-1);
-                    if(grammar_check) {
-                        printf("%lf\n",ans);
-                        int pos=VariableExist(tokens[0].str);
-                        if(pos>=0) {
-                            assignments[pos].float_val=ans;
-                            assignments[pos].type=FLOAT;
-                        }
-                        else {
-                            assignments[num_of_assignments].float_val=ans;
-                            assignments[num_of_assignments].type=FLOAT;
-                            strcpy(assignments[num_of_assignments].name,tokens[0].str);
-                            num_of_assignments++;
-                        }
-                    }
-                    else printf("Error\n");
+                else printf("Error\n");
+            }
+            if(answer_type==FLOAT) {
+                double ans = FloatAssignment(0,num_of_tokens-1);
+                if(grammar_check) {
+                    printf("%lf\n",ans);
                 }
+                else printf("Error\n");
             }
         }
     }
@@ -405,6 +382,7 @@ double FloatEval(int l,int r) {
         }
         else return 0;
     }
+    return 0;
 }
 int VariableExist(const char *str) {
     for(int i=0;i<num_of_assignments;i++) {
@@ -413,4 +391,94 @@ int VariableExist(const char *str) {
         }
     }
     return -1;
+}
+int IntAssignment(int l,int r) {
+    if(tokens[l].type==VARIABLE && tokens[l+1].str[0]=='=') {
+        int ans;
+        if(ExprTypeJudge(l+2,r)==EXPR) {
+            ans = IntEval(l+2,r);
+            if(grammar_check) {
+                int pos=VariableExist(tokens[l].str);
+                if(pos>=0) {
+                    assignments[pos].int_val=ans;
+                    assignments[pos].type=INTEGER;
+                }
+                else {
+                    assignments[num_of_assignments].int_val=ans;
+                    assignments[num_of_assignments].type=INTEGER;
+                    strcpy(assignments[num_of_assignments].name,tokens[l].str);
+                    num_of_assignments++;
+                }
+                return ans;
+            }
+            else return 0;
+        }
+        if(ExprTypeJudge(l+2,r)==ASSIGNMENT) {
+            ans = IntAssignment(l+2,r);
+            if(grammar_check) {
+                int pos=VariableExist(tokens[l].str);
+                if(pos>=0) {
+                    assignments[pos].int_val=ans;
+                    assignments[pos].type=INTEGER;
+                }
+                else {
+                    assignments[num_of_assignments].int_val=ans;
+                    assignments[num_of_assignments].type=INTEGER;
+                    strcpy(assignments[num_of_assignments].name,tokens[l].str);
+                    num_of_assignments++;
+                }
+                return ans;
+            }
+            else return 0;
+        }
+    }
+    else {
+        grammar_check=0;
+        return 0;
+    }
+}
+double FloatAssignment(int l,int r) {
+    if(tokens[l].type==VARIABLE && tokens[l+1].str[0]=='=') {
+        double ans;
+        if(ExprTypeJudge(l+2,r)==EXPR) {
+            ans = FloatEval(l+2,r);
+            if(grammar_check) {
+                int pos=VariableExist(tokens[l].str);
+                if(pos>=0) {
+                    assignments[pos].float_val=ans;
+                    assignments[pos].type=FLOAT;
+                }
+                else {
+                    assignments[num_of_assignments].float_val=ans;
+                    assignments[num_of_assignments].type=FLOAT;
+                    strcpy(assignments[num_of_assignments].name,tokens[l].str);
+                    num_of_assignments++;
+                }
+                return ans;
+            }
+            else return 0;
+        }
+        if(ExprTypeJudge(l+2,r)==ASSIGNMENT) {
+            ans = FloatAssignment(l+2,r);
+            if(grammar_check) {
+                int pos=VariableExist(tokens[l].str);
+                if(pos>=0) {
+                    assignments[pos].float_val=ans;
+                    assignments[pos].type=FLOAT;
+                }
+                else {
+                    assignments[num_of_assignments].float_val=ans;
+                    assignments[num_of_assignments].type=FLOAT;
+                    strcpy(assignments[num_of_assignments].name,tokens[l].str);
+                    num_of_assignments++;
+                }
+                return ans;
+            }
+            else return 0;
+        }
+    }
+    else {
+        grammar_check=0;
+        return 0;
+    }
 }
