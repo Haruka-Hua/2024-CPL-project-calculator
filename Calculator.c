@@ -5,7 +5,7 @@
 #include<stdbool.h>
 #include<limits.h>
 enum TokenType{INTEGER,FLOAT,VARIABLE,OPERATOR,BRACKET};
-enum ExprType{EVAL,ASSIGNMENT,GRAMMARMISTAKE};
+enum ExprType{EXPR,ASSIGNMENT};
 typedef struct Token {
     int type;
     char str[32];
@@ -14,21 +14,32 @@ typedef struct Assignment {
     char name[32];
     int type;
     int ival;
-    float fval;
+    double fval;
 } assignment;
-token tokens[32];
+token tokens[128];
 bool End=1;
+bool grammar_check=1;
 
 const char *operators[5]={"+","-","*","/","="};
 const char *brackets[2]={"(",")"};
 
 int Tokenizer();
+int ExprTypeJudge();
+int IntEval();
+double FloatEval();
 int main() {
     while(End) {
         int num_of_tokens = Tokenizer();
         if(num_of_tokens==-1) {
             printf("Error\n");
             continue;
+        }
+        if(ExprTypeJudge(num_of_tokens)==EXPR) {
+            //needs to revise when float appears;
+            int ans = IntEval(0,num_of_tokens-1);
+            if(grammar_check) {
+                printf("%d",ans);
+            }
         }
         //todo;
     }
@@ -115,4 +126,16 @@ int Tokenizer() {
     } while(ch!='\n' && ch!=EOF);
     if(ch==EOF) End=0;
     return num_of_tokens;
+}
+int ExprTypeJudge(int num_of_tokens) {
+    for(int i=0;i<num_of_tokens;i++) {
+        if(strcmp("=",tokens[i].str)==0) return ASSIGNMENT;
+    }
+    return EXPR;
+}
+int IntEval() {
+    //todo;
+}
+double FloatEval() {
+    //todo;
 }
