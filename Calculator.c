@@ -25,9 +25,11 @@ const char *operators[5]={"+","-","*","/","="};
 const char *brackets[2]={"(",")"};
 
 int Tokenizer();
+bool BracketGrammarCheck();
 int ExprTypeJudge();
 int IntEval();
 double FloatEval();
+int AnswerType();
 int VariableExist(const char *str);
 int main() {
     FILE *fp=fopen("d:\\CLionProjects\\Calculator\\cal.in","r");
@@ -41,39 +43,85 @@ int main() {
         if(num_of_tokens==0) {
             return 0;
         }
+        if(!BracketGrammarCheck(num_of_tokens)) {
+            printf("Error\n");
+            continue;
+        }
         int expr_type = ExprTypeJudge(0,num_of_tokens-1);
         if(expr_type==EXPR) {
             //needs to be revised when float appears;
-            int ans = IntEval(0,num_of_tokens-1);
-            if(grammar_check) {
-                printf("%d\n",ans);
+            int expr_ans_type = AnswerType(0,num_of_tokens-1);
+            if(expr_ans_type==INTEGER) {
+                int ans = IntEval(0,num_of_tokens-1);
+                if(grammar_check) {
+                    printf("%d\n",ans);
+                }
+                else printf("Error\n");
             }
-            else printf("Error\n");
+            if(expr_ans_type==FLOAT) {
+                double ans = FloatEval(0,num_of_tokens-1);
+                if(grammar_check) {
+                    printf("%lf\n",ans);
+                }
+                else printf("Error\n");
+            }
         }
         if(expr_type==ASSIGNMENT) {
             //needs to be revised when float appears;
             if(tokens[0].type==VARIABLE && tokens[1].str[0]=='=') {
-                int ans = IntEval(2,num_of_tokens-1);
-                if(grammar_check) {
-                    printf("%d\n",ans);
-                    int pos=VariableExist(tokens[0].str);
-                    if(pos>=0) {
-                        assignments[pos].int_val=ans;
+                int answer_type=AnswerType(2,num_of_tokens-1);
+                if(answer_type==INTEGER){
+                    int ans = IntEval(2,num_of_tokens-1);
+                    if(grammar_check) {
+                        printf("%d\n",ans);
+                        int pos=VariableExist(tokens[0].str);
+                        if(pos>=0) {
+                            assignments[pos].int_val=ans;
+                            assignments[pos].type=INTEGER;
+                        }
+                        else {
+                            assignments[num_of_assignments].int_val=ans;
+                            assignments[num_of_assignments].type=INTEGER;
+                            strcpy(assignments[num_of_assignments].name,tokens[0].str);
+                            num_of_assignments++;
+                        }
                     }
-                    else {
-                        assignments[num_of_assignments].int_val=ans;
-                        strcpy(assignments[num_of_assignments].name,tokens[0].str);
-                        num_of_assignments++;
-                    }
+                    else printf("Error\n");
                 }
-                else printf("Error\n");
+                if(answer_type==FLOAT) {
+                    double ans = FloatEval(2,num_of_tokens-1);
+                    if(grammar_check) {
+                        printf("%lf\n",ans);
+                        int pos=VariableExist(tokens[0].str);
+                        if(pos>=0) {
+                            assignments[pos].float_val=ans;
+                            assignments[pos].type=FLOAT;
+                        }
+                        else {
+                            assignments[num_of_assignments].float_val=ans;
+                            assignments[num_of_assignments].type=FLOAT;
+                            strcpy(assignments[num_of_assignments].name,tokens[0].str);
+                            num_of_assignments++;
+                        }
+                    }
+                    else printf("Error\n");
+                }
             }
-            else printf("Error\n");
         }
     }
     return 0;
 }
 
+bool BracketGrammarCheck(int num_of_tokens) {
+    int cnt=0;
+    for(int i=0;i<num_of_tokens;i++) {
+        if(tokens[i].str[0]=='(') cnt++;
+        if(tokens[i].str[0]==')') cnt--;
+        if(cnt<0) return 0;
+    }
+    if(cnt!=0) return 0;
+    else return 1;
+}
 int TokenTypeJudge(const char *str) {
     //operator;
     for(int i=0;i<5;i++) {
@@ -187,6 +235,7 @@ int GetMainOp(int l,int r) {
     for(int i=l;i<=r;i++) {
         if(tokens[i].str[0]=='(') {
             int cnt=1;
+            i++;
             while(cnt != 0 && i<=r) {
                 if(tokens[i].str[0]=='(') {
                     cnt++;
@@ -210,6 +259,19 @@ int GetMainOp(int l,int r) {
             return i;
     }
     return -1;
+}
+int AnswerType(int l,int r) {
+    for(int i=l;i<=r;i++) {
+        if(tokens[i].type==FLOAT) return FLOAT;
+        if(tokens[i].type==VARIABLE) {
+            for(int j=0;j<num_of_assignments;j++) {
+                if(strcmp(tokens[i].str,assignments[j].name)==0) {
+                    if(assignments[j].type==FLOAT) return FLOAT;
+                }
+            }
+        }
+    }
+    return INTEGER;
 }
 int IntEval(int l,int r) {
     if(l>r) {
@@ -257,8 +319,92 @@ int IntEval(int l,int r) {
         else return 0;
     }
 }
-double FloatEval() {
-    //todo;
+double FloatEval(int l,int r) {
+    if(l>r) {
+        grammar_check=0;
+        return 0;
+    }
+    else if(l==r) {
+        if(tokens[l].type==FLOAT) {
+            return strtod(tokens[l].str,NULL);
+        }
+        else if(tokens[l].type==VARIABLE) {
+            for(int i=0;i<num_of_assignments;i++) {
+                if(strcmp(tokens[l].str,assignments[i].name)==0) {
+                    return assignments[i].float_val;
+                }
+            }
+            grammar_check=0;
+            return 0;
+        }
+        else {
+            grammar_check=0;
+            return 0;
+        }
+    }
+    else if(check_brackets(l,r)) {
+        return FloatEval(l+1,r-1);
+    }
+    else {
+        int op = GetMainOp(l,r);
+        if(op<=l || op>=r) grammar_check=0;
+        int type1 = AnswerType(l,op-1), type2 = AnswerType(op+1,r);
+        if(type1==INTEGER && type2==FLOAT) {
+            int val1 = IntEval(l,op-1);
+            double val2 = FloatEval(op+1,r);
+            if(grammar_check) {
+                switch (tokens[op].str[0]) {
+                    case '+': {return val1+val2;}
+                    case '-': {return val1-val2;}
+                    case '*': {return val1*val2;}
+                    case '/': {return val1/val2;}
+                    default: {
+                        printf("Error\n");
+                        grammar_check=0;
+                        return 0;
+                    }
+                }
+            }
+            else return 0;
+        }
+        if(type1==FLOAT && type2==FLOAT) {
+            double val1 = FloatEval(l,op-1);
+            double val2 = FloatEval(op+1,r);
+            if(grammar_check) {
+                switch (tokens[op].str[0]) {
+                    case '+': {return val1+val2;}
+                    case '-': {return val1-val2;}
+                    case '*': {return val1*val2;}
+                    case '/': {return val1/val2;}
+                    default: {
+                        printf("Error\n");
+                        grammar_check=0;
+                        return 0;
+                    }
+                }
+            }
+            else return 0;
+        }
+        if(type1==FLOAT && type2==INTEGER) {
+            double val1 = FloatEval(l,op-1);
+            int val2 = IntEval(op+1,r);
+            if(grammar_check) {
+                switch (tokens[op].str[0]) {
+                    case '+': {return val1+val2;}
+                    case '-': {return val1-val2;}
+                    case '*': {return val1*val2;}
+                    case '/': {return val1/val2;}
+                    default: {
+                        printf("Error\n");
+                        grammar_check=0;
+                        return 0;
+                    }
+                }
+            }
+            else return 0;
+        }
+        else return 0;
+    }
 }
 int VariableExist(const char *str) {
     for(int i=0;i<num_of_assignments;i++) {
