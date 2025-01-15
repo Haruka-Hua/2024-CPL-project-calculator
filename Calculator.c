@@ -13,13 +13,14 @@ typedef struct Token {
 typedef struct Assignment {
     char name[32];
     int type;
-    int ival;
-    double fval;
+    int int_val;
+    double float_val;
 } assignment;
 token tokens[128];
+assignment assignments[64];
 bool End=1;
 bool grammar_check=1;
-
+int num_of_assignments=0;
 const char *operators[5]={"+","-","*","/","="};
 const char *brackets[2]={"(",")"};
 
@@ -27,6 +28,7 @@ int Tokenizer();
 int ExprTypeJudge();
 int IntEval();
 double FloatEval();
+int VariableExist(const char *str);
 int main() {
     FILE *fp=fopen("d:\\CLionProjects\\Calculator\\cal.in","r");
     while(End) {
@@ -41,19 +43,38 @@ int main() {
         }
         int expr_type = ExprTypeJudge(0,num_of_tokens-1);
         if(expr_type==EXPR) {
-            //needs to revise when float appears;
+            //needs to be revised when float appears;
             int ans = IntEval(0,num_of_tokens-1);
             if(grammar_check) {
                 printf("%d\n",ans);
             }
             else printf("Error\n");
         }
-        //todo;
+        if(expr_type==ASSIGNMENT) {
+            //needs to be revised when float appears;
+            if(tokens[0].type==VARIABLE && tokens[1].str[0]=='=') {
+                int ans = IntEval(2,num_of_tokens-1);
+                if(grammar_check) {
+                    printf("%d\n",ans);
+                    int pos=VariableExist(tokens[0].str);
+                    if(pos>=0) {
+                        assignments[pos].int_val=ans;
+                    }
+                    else {
+                        assignments[num_of_assignments].int_val=ans;
+                        strcpy(assignments[num_of_assignments].name,tokens[0].str);
+                        num_of_assignments++;
+                    }
+                }
+                else printf("Error\n");
+            }
+            else printf("Error\n");
+        }
     }
     return 0;
 }
 
-int TypeJudge(const char *str) {
+int TokenTypeJudge(const char *str) {
     //operator;
     for(int i=0;i<5;i++) {
         if(strcmp(operators[i],str)==0) {
@@ -125,7 +146,7 @@ int Tokenizer(FILE *fp) {
         }
         if(num_of_tokens>=0) {
             strcpy(tokens[num_of_tokens].str,str);
-            int token_type = TypeJudge(str);
+            int token_type = TokenTypeJudge(str);
             if(token_type==-1) num_of_tokens=-1;
             else {
                 tokens[num_of_tokens].type = token_type;
@@ -200,7 +221,13 @@ int IntEval(int l,int r) {
             return atoi(tokens[l].str);
         }
         else if(tokens[l].type==VARIABLE) {
-            //todo;
+            for(int i=0;i<num_of_assignments;i++) {
+                if(strcmp(tokens[l].str,assignments[i].name)==0) {
+                    return assignments[i].int_val;
+                }
+            }
+            grammar_check=0;
+            return 0;
         }
         else {
             grammar_check=0;
@@ -232,4 +259,12 @@ int IntEval(int l,int r) {
 }
 double FloatEval() {
     //todo;
+}
+int VariableExist(const char *str) {
+    for(int i=0;i<num_of_assignments;i++) {
+        if(strcmp(assignments[i].name,str)==0) {
+            return i;
+        }
+    }
+    return -1;
 }
