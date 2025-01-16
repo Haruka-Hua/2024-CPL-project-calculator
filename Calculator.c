@@ -34,7 +34,7 @@ int VariableExist(const char *str);
 int IntAssignment();
 double FloatAssignment();
 void IdentifyNegative();
-bool PlusOrMinus();
+
 int main() {
     FILE *fp=fopen("d:\\CLionProjects\\Calculator\\cal.in","r");
     while(End) {
@@ -521,3 +521,4 @@ double FloatAssignment(int l,int r) {
         return 0;
     }
 }
+// owo
