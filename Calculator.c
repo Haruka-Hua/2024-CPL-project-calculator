@@ -33,6 +33,8 @@ int AnswerType();
 int VariableExist(const char *str);
 int IntAssignment();
 double FloatAssignment();
+void IdentifyNegative();
+bool PlusOrMinus();
 int main() {
     FILE *fp=fopen("d:\\CLionProjects\\Calculator\\cal.in","r");
     while(End) {
@@ -45,6 +47,7 @@ int main() {
         if(num_of_tokens==0) {
             return 0;
         }
+        IdentifyNegative(num_of_tokens);
         if(!BracketGrammarCheck(num_of_tokens)) {
             printf("Error\n");
             continue;
@@ -89,6 +92,18 @@ int main() {
     return 0;
 }
 
+void IdentifyNegative(int num_of_tokens) {
+    for(int i=0;i<num_of_tokens;i++) {
+        if(i==0 && tokens[i].str[0]=='-') {
+            tokens[i].str[0]='#';
+        }
+        else {
+            if(tokens[i].str[0]=='-' && (tokens[i-1].type==BRACKET || tokens[i-1].type==OPERATOR)) {
+                tokens[i].str[0]='#';
+            }
+        }
+    }
+}
 bool BracketGrammarCheck(int num_of_tokens) {
     int cnt=0;
     for(int i=0;i<num_of_tokens;i++) {
@@ -277,6 +292,14 @@ int IntEval(int l,int r) {
         return IntEval(l+1,r-1);
     }
     else {
+        if(tokens[l].str[0]=='#') {
+            if(check_brackets(l+1,r)) {
+                return -IntEval(l+1,r);
+            }
+            if(!PlusOrMinus(l+1,r)) {
+                return -IntEval(l+1,r);
+            }
+        }
         int op = GetMainOp(l,r);
         if(op<=l || op>=r) grammar_check=0;
         int val1=IntEval(l,op-1), val2=IntEval(op+1,r);
@@ -323,6 +346,14 @@ double FloatEval(int l,int r) {
         return FloatEval(l+1,r-1);
     }
     else {
+        if(tokens[l].str[0]=='#') {
+            if(check_brackets(l+1,r)) {
+                return -FloatEval(l+1,r);
+            }
+            if(!PlusOrMinus(l+1,r)) {
+                return -FloatEval(l+1,r);
+            }
+        }
         int op = GetMainOp(l,r);
         if(op<=l || op>=r) grammar_check=0;
         int type1 = AnswerType(l,op-1), type2 = AnswerType(op+1,r);
@@ -481,4 +512,29 @@ double FloatAssignment(int l,int r) {
         grammar_check=0;
         return 0;
     }
+}
+bool PlusOrMinus(int l,int r) {
+    int in_bracket[r-l+1]={};
+    for(int i=l;i<=r;i++) {
+        if(tokens[i].str[0]=='(') {
+            int cnt=1;
+            i++;
+            while(cnt != 0 && i<=r) {
+                if(tokens[i].str[0]=='(') {
+                    cnt++;
+                }
+                else if(tokens[i].str[0]==')') {
+                    cnt--;
+                }
+                in_bracket[i-l]=1;
+                i++;
+            }
+        }
+    }
+    for(int i=l;i<=r;i++) {
+        if(in_bracket[i] != 1 && (tokens[i].str[0]=='-' || tokens[i].str[0]=='+')) {
+            return 1;
+        }
+    }
+    return 0;
 }
